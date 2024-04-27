@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import { Mock } from 'vitest';
+import { vi } from 'vitest';
 
 import { User } from '@/api/user/userModel';
 import { UserRepository } from '@/api/user/userRepository';
@@ -15,17 +15,16 @@ vi.mock('@/server', () => ({
 
 describe('userService', () => {
   const mockUsers: User[] = [
-    { id: '1', name: 'Alice', email: 'alice@example.com' },
-    { id: '2', name: 'Bob', email: 'bob@example.com' },
+    { uid: '1', name: 'Alice', email: 'alice@example.com' },
+    { uid: '2', name: 'Bob', email: 'bob@example.com' },
   ];
-
-  const userRepository = new UserRepository();
-  const userService = new UserService();
 
   describe('findAll', () => {
     it('return all users', async () => {
       // Arrange
-      (userRepository.findAllAsync as Mock).mockReturnValue(mockUsers);
+      const mockUserRepository = new UserRepository();
+      vi.spyOn(mockUserRepository, 'findAllAsync').mockReturnValue(Promise.resolve(mockUsers));
+      const userService: UserService = new UserService(mockUserRepository);
 
       // Act
       const result = await userService.findAll();
@@ -38,8 +37,10 @@ describe('userService', () => {
     });
 
     it('returns a not found error for no users found', async () => {
-      // Arrange
-      (userRepository.findAllAsync as Mock).mockReturnValue(null);
+      //Arrange
+      const mockUserRepository = new UserRepository();
+      vi.spyOn(mockUserRepository, 'findAllAsync').mockReturnValue(Promise.resolve([]));
+      const userService: UserService = new UserService(mockUserRepository);
 
       // Act
       const result = await userService.findAll();
@@ -47,13 +48,15 @@ describe('userService', () => {
       // Assert
       expect(result.statusCode).toEqual(StatusCodes.NOT_FOUND);
       expect(result.success).toBeFalsy();
-      expect(result.message).toContain('No Users found');
+      expect(result.message).toContain('No users found');
       expect(result.responseObject).toBeNull();
     });
 
-    it('handles errors for findAllAsync', async () => {
+    it('handles errors for findAll', async () => {
       // Arrange
-      (userRepository.findAllAsync as Mock).mockRejectedValue(new Error('Database error'));
+      const mockUserRepository = new UserRepository();
+      vi.spyOn(mockUserRepository, 'findAllAsync').mockRejectedValue(new Error('Database error'));
+      const userService: UserService = new UserService(mockUserRepository);
 
       // Act
       const result = await userService.findAll();
@@ -70,8 +73,10 @@ describe('userService', () => {
     it('returns a user for a valid ID', async () => {
       // Arrange
       const testId = '1';
-      const mockUser = mockUsers.find((user) => user.id === testId);
-      (userRepository.findByIdAsync as Mock).mockReturnValue(mockUser);
+      const mockUser = mockUsers.find((user) => user.uid === testId) || null;
+      const mockUserRepository = new UserRepository();
+      vi.spyOn(mockUserRepository, 'findByIdAsync').mockReturnValue(Promise.resolve(mockUser));
+      const userService = new UserService(mockUserRepository);
 
       // Act
       const result = await userService.findById(testId);
@@ -83,10 +88,12 @@ describe('userService', () => {
       expect(result.responseObject).toEqual(mockUser);
     });
 
-    it('handles errors for findByIdAsync', async () => {
+    it('handles errors for findById', async () => {
       // Arrange
       const testId = '1';
-      (userRepository.findByIdAsync as Mock).mockRejectedValue(new Error('Database error'));
+      const mockUserRepository = new UserRepository();
+      vi.spyOn(mockUserRepository, 'findByIdAsync').mockRejectedValue(new Error('Database error'));
+      const userService = new UserService(mockUserRepository);
 
       // Act
       const result = await userService.findById(testId);
@@ -100,8 +107,10 @@ describe('userService', () => {
 
     it('returns a not found error for non-existent ID', async () => {
       // Arrange
-      const testId = '1';
-      (userRepository.findByIdAsync as Mock).mockReturnValue(null);
+      const testId = '3';
+      const mockUserRepository = new UserRepository();
+      vi.spyOn(mockUserRepository, 'findByIdAsync').mockReturnValue(Promise.resolve(null));
+      const userService = new UserService(mockUserRepository);
 
       // Act
       const result = await userService.findById(testId);

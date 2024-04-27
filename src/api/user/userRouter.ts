@@ -7,12 +7,15 @@ import { UserService } from '@/api/user/userService';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { handleServiceResponse, validateRequest } from '@/common/utils/httpHandlers';
 
+import { UserRepository } from './userRepository';
+
 export const userRegistry = new OpenAPIRegistry();
 
 userRegistry.register('User', UserSchema);
 
 export const userRouter: Router = (() => {
-  const userService = new UserService();
+  const userRepository = new UserRepository();
+  const userService = new UserService(userRepository);
   const router = express.Router();
 
   userRegistry.registerPath({
