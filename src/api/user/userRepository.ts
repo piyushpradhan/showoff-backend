@@ -1,16 +1,27 @@
+import { Pool } from 'pg';
+
 import { User } from '@/api/user/userModel';
+import { env } from '@/common/utils/envConfig';
 
-export const users: User[] = [
-  { id: 1, name: 'Alice', email: 'alice@example.com', age: 42, createdAt: new Date(), updatedAt: new Date() },
-  { id: 2, name: 'Bob', email: 'bob@example.com', age: 21, createdAt: new Date(), updatedAt: new Date() },
-];
+export class UserRepository {
+  private pool: Pool;
 
-export const userRepository = {
-  findAllAsync: async (): Promise<User[]> => {
-    return users;
-  },
+  constructor() {
+    this.pool = new Pool({
+      connectionString: env.DB_URL,
+    });
+  }
 
-  findByIdAsync: async (id: number): Promise<User | null> => {
-    return users.find((user) => user.id === id) || null;
-  },
-};
+  async findAllAsync(): Promise<User[]> {
+    const query = 'SELECT * from users;';
+    const result = await this.pool.query(query);
+    return result.rows.length > 0 ? result.rows[0] : [];
+  }
+
+  async findByIdAsync(id: string): Promise<User | null> {
+    const query = 'SELECT * from users WHERE uid = $1';
+    const values = [id];
+    const result = await this.pool.query(query, values);
+    return result.rows.length > 0 ? result.rows[0] : null;
+  }
+}
