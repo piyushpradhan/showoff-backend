@@ -8,14 +8,14 @@ import { logger } from '@/server';
 export class UserService {
   private userRepository: UserRepository;
 
-  constructor() {
-    this.userRepository = new UserRepository();
+  constructor(userRepository: UserRepository) {
+    this.userRepository = userRepository;
   }
 
   async findAll(): Promise<ServiceResponse<User[] | null>> {
     try {
       const users = await this.userRepository.findAllAsync();
-      if (!users) {
+      if (!users || users.length === 0) {
         return new ServiceResponse(ResponseStatus.Failed, 'No users found', null, StatusCodes.NOT_FOUND);
       }
 

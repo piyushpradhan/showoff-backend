@@ -14,6 +14,7 @@ import requestLogger from '@/common/middleware/requestLogger';
 import { env } from '@/common/utils/envConfig';
 
 import { authRouter } from './api/auth/authRouter';
+import { openAPIRouter } from './api-docs/openAPIRouter';
 
 const logger = pino({ name: 'server start' });
 const app: Express = express();
@@ -36,7 +37,7 @@ app.use('/users', userRouter);
 app.use('/auth', authRouter);
 
 // Swagger UI
-// app.use(openAPIRouter);
+app.use(openAPIRouter);
 
 // Error handlers
 app.use(errorHandler());

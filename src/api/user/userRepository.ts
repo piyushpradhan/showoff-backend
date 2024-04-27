@@ -15,7 +15,7 @@ export class UserRepository {
   async findAllAsync(): Promise<User[]> {
     const query = 'SELECT * from users;';
     const result = await this.pool.query(query);
-    return result.rows.length > 0 ? result.rows[0] : [];
+    return result.rows.length > 0 ? result.rows : [];
   }
 
   async findByIdAsync(id: string): Promise<User | null> {

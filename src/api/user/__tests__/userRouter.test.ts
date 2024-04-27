@@ -2,7 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import request from 'supertest';
 
 import { User } from '@/api/user/userModel';
-import { users } from '@/api/user/userRepository';
+import { UserRepository } from '@/api/user/userRepository';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { app } from '@/server';
 
@@ -12,6 +12,8 @@ describe('User API Endpoints', () => {
       // Act
       const response = await request(app).get('/users');
       const responseBody: ServiceResponse<User[]> = response.body;
+      const userRepository: UserRepository = new UserRepository();
+      const users = await userRepository.findAllAsync();
 
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.OK);
@@ -23,10 +25,15 @@ describe('User API Endpoints', () => {
   });
 
   describe('GET /users/:id', () => {
+    const mockUsers: User[] = [
+      { uid: '1', name: 'Alice', email: 'alice@example.com' },
+      { uid: '2', name: 'Bob', email: 'bob@example.com' },
+    ];
+
     it('should return a user for a valid ID', async () => {
       // Arrange
-      const testId = 1;
-      const expectedUser = users.find((user) => user.id === testId) as User;
+      const testId = '1';
+      const expectedUser = mockUsers.find((user) => user.uid === testId) as User;
 
       // Act
       const response = await request(app).get(`/users/${testId}`);
@@ -42,7 +49,7 @@ describe('User API Endpoints', () => {
 
     it('should return a not found error for non-existent ID', async () => {
       // Arrange
-      const testId = Number.MAX_SAFE_INTEGER;
+      const testId = `${Number.MAX_SAFE_INTEGER}`;
 
       // Act
       const response = await request(app).get(`/users/${testId}`);
@@ -54,19 +61,6 @@ describe('User API Endpoints', () => {
       expect(responseBody.message).toContain('User not found');
       expect(responseBody.responseObject).toBeNull();
     });
-
-    it('should return a bad request for invalid ID format', async () => {
-      // Act
-      const invalidInput = 'abc';
-      const response = await request(app).get(`/users/${invalidInput}`);
-      const responseBody: ServiceResponse = response.body;
-
-      // Assert
-      expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
-      expect(responseBody.success).toBeFalsy();
-      expect(responseBody.message).toContain('Invalid input');
-      expect(responseBody.responseObject).toBeNull();
-    });
   });
 });
 
@@ -75,7 +69,7 @@ function compareUsers(mockUser: User, responseUser: User) {
     throw new Error('Invalid test data: mockUser or responseUser is undefined');
   }
 
-  expect(responseUser.id).toEqual(mockUser.id);
+  expect(responseUser.uid).toEqual(mockUser.uid);
   expect(responseUser.name).toEqual(mockUser.name);
   expect(responseUser.email).toEqual(mockUser.email);
 }
